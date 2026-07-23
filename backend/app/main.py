@@ -1,11 +1,12 @@
 from fastapi import FastAPI
 
 from app.api.v1.router import api_router
+from app.config.settings import settings
 
 app = FastAPI(
-    title="FluentFix AI API",
+    title=settings.APP_NAME,
     description="AI-powered text correction backend.",
-    version="0.1.0",
+    version=settings.APP_VERSION,
 )
 
 app.include_router(api_router)
@@ -14,5 +15,6 @@ app.include_router(api_router)
 @app.get("/", tags=["Root"])
 def root():
     return {
-        "message": "Welcome to FluentFix AI 🚀"
+        "message": f"Welcome to {settings.APP_NAME} 🚀",
+        "debug": settings.DEBUG,
     }
