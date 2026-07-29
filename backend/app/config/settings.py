@@ -2,9 +2,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    """
-    Application configuration loaded from the .env file.
-    """
+    
 
     # ==========================
     # Application
@@ -26,7 +24,13 @@ class Settings(BaseSettings):
     # ==========================
     # Database
     # ==========================
+    DATABASE_HOST: str
+    DATABASE_PORT: int
+    DATABASE_NAME: str
+    DATABASE_USER: str
+    DATABASE_PASSWORD: str
     DATABASE_URL: str
+    
 
     # ==========================
     # AI
@@ -36,6 +40,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=".env",
         case_sensitive=True,
+        extra="ignore",
     )
 
 

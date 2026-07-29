@@ -1,12 +1,20 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncSession
 
-router = APIRouter()
+from app.db.dependencies import get_db
+
+router = APIRouter(prefix="/health", tags=["Health"])
 
 
-@router.get("/health", tags=["Health"])
-def health_check():
+@router.get("/database")
+async def database_health(
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(text("SELECT 1"))
+
     return {
         "status": "healthy",
-        "service": "FluentFix AI Backend",
-        "version": "0.1.0"
+        "database": "connected",
+        "result": result.scalar(),
     }
