@@ -5,7 +5,7 @@ from app.services.ai.fluency import improve_fluency
 
 async def process_text(text: str) -> dict:
     """
-    Run the complete AI correction pipeline.
+    Complete AI pipeline.
     """
 
     original_text = text
