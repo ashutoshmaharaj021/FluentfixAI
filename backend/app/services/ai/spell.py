@@ -1,35 +1,30 @@
-from pathlib import Path
-
-from symspellpy import SymSpell, Verbosity
+from symspellpy import SymSpell
+from wordfreq import top_n_list, zipf_frequency
 
 sym_spell = SymSpell(max_dictionary_edit_distance=2)
 
-dictionary_path = (
-    Path(__file__)
-    .resolve()
-    .parents[3]
-    / "resources"
-    / "dictionaries"
-    / "frequency_dictionary_en_82_765.txt"
-)
-
-if not sym_spell.load_dictionary(
-    str(dictionary_path),
-    term_index=0,
-    count_index=1,
-):
-    raise FileNotFoundError(
-        f"Dictionary not found: {dictionary_path}"
-    )
+for word in top_n_list("en", 500000):
+    frequency = int(10 ** zipf_frequency(word, "en"))
+    if frequency > 0:
+        sym_spell.create_dictionary_entry(word, frequency)
 
 
 async def correct_spelling(text: str) -> str:
     corrected_words = []
 
     for word in text.split():
+
+        clean_word = word.strip(".,!?;:\"'()[]{}")
+
+        # If it's already a valid/common English word,
+        # don't touch it.
+        if zipf_frequency(clean_word.lower(), "en") > 2.5:
+            corrected_words.append(word)
+            continue
+
         suggestions = sym_spell.lookup(
-            word,
-            Verbosity.CLOSEST,
+            clean_word,
+            verbosity=0,
             max_edit_distance=2,
         )
 

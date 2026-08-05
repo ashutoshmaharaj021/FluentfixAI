@@ -20,4 +20,9 @@ async def correct_text(
     request: CorrectionRequest,
 ):
     result = await process_text(request.text)
+    print("=" *50)
+    print(result)
+    print(type(result))
+    print("=" *50)
+
     return result
