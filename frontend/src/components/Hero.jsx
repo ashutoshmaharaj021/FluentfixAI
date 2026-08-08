@@ -1,4 +1,5 @@
 import { FaArrowRight, FaGithub, FaMagic } from "react-icons/fa";
+import {Link} from "react-router-dom";
 
 function Hero() {
   return (
@@ -27,11 +28,12 @@ function Hero() {
 
         {/* Buttons */}
         <div className="mt-10 flex flex-col md:flex-row items-center justify-center gap-4">
-          <button className="px-7 py-4 rounded-xl bg-cyan-500 hover:bg-cyan-400 transition font-semibold flex items-center gap-2">
-            Try FluentFix
-            <FaArrowRight />
-          </button>
-
+         <Link
+  to="/workspace"
+  className="bg-cyan-500 hover:bg-cyan-400 text-black px-6 py-3 rounded-xl font-semibold transition"
+>
+  Try FluentFix
+</Link>
           <a
             href="https://github.com/ashutoshmaharaj021/FluentfixAI"
             target="_blank"

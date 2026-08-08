@@ -1,13 +1,12 @@
 import logging
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.config.logging import setup_logging
-from fastapi import FastAPI
-
 from app.api.v1.router import api_router
 from app.config.settings import settings
 
 setup_logging()
-
 logger = logging.getLogger(__name__)
 
 app = FastAPI(
@@ -16,10 +15,17 @@ app = FastAPI(
     version=settings.APP_VERSION,
 )
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 logger.info("FluentFix AI Backend started successfully.")
 
 app.include_router(api_router)
-
 
 @app.get("/", tags=["Root"])
 def root():

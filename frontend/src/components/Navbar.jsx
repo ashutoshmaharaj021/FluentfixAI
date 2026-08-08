@@ -1,4 +1,5 @@
 import { FaGithub } from "react-icons/fa";
+import {Link} from "react-router-dom";
 
 function Navbar() {
   return (
@@ -40,9 +41,12 @@ function Navbar() {
 
         {/* CTA */}
 
-        <button className="rounded-full bg-cyan-400 px-6 py-3 text-black font-semibold hover:bg-cyan-300 transition">
-          Try AI
-        </button>
+      <Link
+      to="/workspace"
+      className="hidden md:block px-6 py-3 rounded-full bg-cyan-500 text-black font-semibold hover:bg-cyan-400 transition"
+      >
+        Try AI
+      </Link>
 
       </div>
     </header>
