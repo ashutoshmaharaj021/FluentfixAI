@@ -6,6 +6,8 @@ import {
   Settings,
   Wand2,
   Loader2,
+  Copy,
+  Check,
 } from "lucide-react";
 import api from "../services/api";
 
@@ -14,6 +16,7 @@ function Workspace() {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [copied, setCopied] = useState(false);
 
   const handleCorrection = async () => {
     if (!text.trim()) return;
@@ -34,6 +37,21 @@ function Workspace() {
       setLoading(false);
     }
   };
+
+  const handleCopy = async () => {
+  if (!result?.corrected) return;
+
+  try {
+    await navigator.clipboard.writeText(result.corrected);
+    setCopied(true);
+
+    setTimeout(() => {
+      setCopied(false);
+    }, 2000);
+  } catch (err) {
+    console.error("Copy failed:", err);
+  }
+};
 
   return (
     <div className="min-h-screen bg-[#060B16] text-white flex">
@@ -176,12 +194,32 @@ function Workspace() {
                       <p>{result.fluency}</p>
                     </div>
 
-                    <div className="pt-3 border-t border-white/10">
-                      <h4 className="text-cyan-400 font-semibold mb-2">
-                        Final Corrected Text
-                      </h4>
-                      <p className="text-white">{result.corrected}</p>
-                    </div>
+                   <div className="pt-3 border-t border-white/10">
+  <div className="flex items-center justify-between mb-2">
+    <h4 className="text-cyan-400 font-semibold">
+      Final Corrected Text
+    </h4>
+
+    <button
+      onClick={handleCopy}
+      className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition text-sm"
+    >
+      {copied ? (
+        <>
+          <Check size={16} className="text-green-400" />
+          Copied
+        </>
+      ) : (
+        <>
+          <Copy size={16} />
+          Copy
+        </>
+      )}
+    </button>
+  </div>
+
+  <p className="text-white leading-7">{result.corrected}</p>
+</div>
                   </div>
                 ) : (
                   <div className="flex items-center justify-center h-full text-slate-500">
