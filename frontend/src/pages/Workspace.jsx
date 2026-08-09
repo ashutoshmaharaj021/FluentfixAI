@@ -39,19 +39,54 @@ function Workspace() {
   };
 
   const handleCopy = async () => {
-  if (!result?.corrected) return;
+    if (!result?.corrected) return;
 
-  try {
-    await navigator.clipboard.writeText(result.corrected);
-    setCopied(true);
+    try {
+      await navigator.clipboard.writeText(result.corrected);
+      setCopied(true);
 
-    setTimeout(() => {
-      setCopied(false);
-    }, 2000);
-  } catch (err) {
-    console.error("Copy failed:", err);
-  }
-};
+      setTimeout(() => {
+        setCopied(false);
+      }, 2000);
+    } catch (err) {
+      console.error("Copy failed:", err);
+    }
+  };
+
+  const handleExportTxt = () => {
+    if (!result) return;
+
+    const content = `FluentFix AI Correction
+
+Original:
+${result.original}
+
+Spelling:
+${result.spelling}
+
+Grammar:
+${result.grammar}
+
+Fluency:
+${result.fluency}
+
+Final Corrected Text:
+${result.corrected}
+
+Confidence:
+${Math.round(result.confidence * 100)}%
+`;
+
+    const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "fluentfix-correction.txt";
+    link.click();
+
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <div className="min-h-screen bg-[#060B16] text-white flex">
@@ -103,7 +138,11 @@ function Workspace() {
             </p>
           </div>
 
-          <button className="bg-white/5 border border-white/10 px-4 py-2 rounded-lg hover:bg-white/10 transition">
+          <button
+            onClick={handleExportTxt}
+            disabled={!result}
+            className="bg-white/5 border border-white/10 px-4 py-2 rounded-lg hover:bg-white/10 disabled:opacity-40 disabled:cursor-not-allowed transition"
+          >
             Export
           </button>
         </div>
@@ -194,48 +233,46 @@ function Workspace() {
                       <p>{result.fluency}</p>
                     </div>
 
-                   <div className="pt-3 border-t border-white/10">
-  <div className="flex items-center justify-between mb-2">
-    <h4 className="text-cyan-400 font-semibold">
-      Final Corrected Text
-    </h4>
+                    <div className="pt-3 border-t border-white/10">
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="text-cyan-400 font-semibold">
+                          Final Corrected Text
+                        </h4>
+                        <button
+                          onClick={handleCopy}
+                          className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition text-sm"
+                        >
+                          {copied ? (
+                            <>
+                              <Check size={16} className="text-green-400" />
+                              Copied
+                            </>
+                          ) : (
+                            <>
+                              <Copy size={16} />
+                              Copy
+                            </>
+                          )}
+                        </button>
+                      </div>
 
-    <button
-      onClick={handleCopy}
-      className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition text-sm"
-    >
-      {copied ? (
-        <>
-          <Check size={16} className="text-green-400" />
-          Copied
-        </>
-      ) : (
-        <>
-          <Copy size={16} />
-          Copy
-        </>
-      )}
-    </button>
-  </div>
-
-  <p className="text-white leading-7">{result.corrected}</p>
-</div>
+                      <p className="text-white leading-7">{result.corrected}</p>
+                    </div>
                   </div>
                 ) : (
                   <div className="flex items-center justify-center h-full text-slate-500">
-                    Your corrected text will appear here after clicking
-                    “Correct AI”.
+                    Your corrected text will appear here after clicking “Correct
+                    AI”.
                   </div>
                 )}
 
-                {error && (
-                  <p className="text-red-400 text-sm mt-4">{error}</p>
-                )}
+                {error && <p className="text-red-400 text-sm mt-4">{error}</p>}
               </div>
 
               <div className="mt-4 flex items-center gap-3 text-sm">
                 <div className="px-3 py-2 rounded-lg bg-white/5 border border-white/10">
-                  Confidence: {result ? `${Math.round(result.confidence * 100)}%` : "—"}
+                  Confidence:{" "}
+                  {result ? `${Math.round(result.confidence * 100)}%` : "—"}
                 </div>
 
                 <div className="px-3 py-2 rounded-lg bg-white/5 border border-white/10">
