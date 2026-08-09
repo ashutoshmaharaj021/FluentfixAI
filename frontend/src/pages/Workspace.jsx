@@ -18,6 +18,10 @@ function Workspace() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
+  const [history, setHistory] = useState(() => {
+    const saved = localStorage.getItem("fluentfix-history");
+    return saved ? JSON.parse(saved) : [];
+  });
 
   const handleCorrection = async () => {
     if (!text.trim()) return;
@@ -31,6 +35,18 @@ function Workspace() {
       });
 
       setResult(response.data);
+      const newEntry = {
+        id: Date.now(),
+        original: response.data.original,
+        corrected: response.data.corrected,
+        result: response.data,
+        timestamp: new Date().toLocaleString(),
+      };
+
+      const updatedHistory = [newEntry, ...history].slice(0, 10);
+
+      setHistory(updatedHistory);
+      localStorage.setItem("fluentfix-history", JSON.stringify(updatedHistory));
     } catch (err) {
       console.error(err);
       setError("Failed to connect to the backend.");
@@ -54,10 +70,10 @@ function Workspace() {
     }
   };
 
- const handleExportTxt = () => {
-  if (!result) return;
+  const handleExportTxt = () => {
+    if (!result) return;
 
-  const content = `FluentFix AI Correction
+    const content = `FluentFix AI Correction
 
 Original:
 ${result.original}
@@ -78,52 +94,52 @@ Confidence:
 ${Math.round(result.confidence * 100)}%
 `;
 
-  const blob = new Blob([content], {
-    type: "text/plain;charset=utf-8",
-  });
+    const blob = new Blob([content], {
+      type: "text/plain;charset=utf-8",
+    });
 
-  const url = URL.createObjectURL(blob);
+    const url = URL.createObjectURL(blob);
 
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = "fluentfix-correction.txt";
-  link.click();
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "fluentfix-correction.txt";
+    link.click();
 
-  URL.revokeObjectURL(url);
-};
-
-const handleExportPDF = () => {
-  if (!result) return;
-
-  const doc = new jsPDF();
-
-  doc.setFontSize(20);
-  doc.text("FluentFix AI Correction Report", 20, 20);
-
-  doc.setFontSize(12);
-
-  let y = 35;
-
-  const addSection = (title, content) => {
-    doc.setFont(undefined, "bold");
-    doc.text(title, 20, y);
-    y += 8;
-
-    doc.setFont(undefined, "normal");
-    const lines = doc.splitTextToSize(content || "", 170);
-    doc.text(lines, 20, y);
-    y += lines.length * 7 + 6;
+    URL.revokeObjectURL(url);
   };
 
-  addSection("Original", result.original);
-  addSection("Spelling", result.spelling);
-  addSection("Grammar", result.grammar);
-  addSection("Fluency", result.fluency);
-  addSection("Final Corrected Text", result.corrected);
-  addSection("Confidence", `${Math.round(result.confidence * 100)}%`);
+  const handleExportPDF = () => {
+    if (!result) return;
 
-  doc.save("fluentfix-correction.pdf");
-};
+    const doc = new jsPDF();
+
+    doc.setFontSize(20);
+    doc.text("FluentFix AI Correction Report", 20, 20);
+
+    doc.setFontSize(12);
+
+    let y = 35;
+
+    const addSection = (title, content) => {
+      doc.setFont(undefined, "bold");
+      doc.text(title, 20, y);
+      y += 8;
+
+      doc.setFont(undefined, "normal");
+      const lines = doc.splitTextToSize(content || "", 170);
+      doc.text(lines, 20, y);
+      y += lines.length * 7 + 6;
+    };
+
+    addSection("Original", result.original);
+    addSection("Spelling", result.spelling);
+    addSection("Grammar", result.grammar);
+    addSection("Fluency", result.fluency);
+    addSection("Final Corrected Text", result.corrected);
+    addSection("Confidence", `${Math.round(result.confidence * 100)}%`);
+
+    doc.save("fluentfix-correction.pdf");
+  };
 
   return (
     <div className="min-h-screen bg-[#060B16] text-white flex">
@@ -144,14 +160,41 @@ const handleExportPDF = () => {
           </button>
 
           <div className="space-y-3 text-slate-300">
-            <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-white/5 cursor-pointer">
+            <div className="flex items-center gap-3 p-3 rounded-lg bg-white/5">
               <FileText size={18} />
               <span>Current Draft</span>
             </div>
 
-            <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-white/5 cursor-pointer">
-              <History size={18} />
-              <span>History</span>
+            {/* History Section */}
+            <div className="mt-6">
+              <div className="flex items-center gap-2 mb-3 text-slate-400">
+                <History size={16} />
+                <span className="text-sm font-medium">Recent History</span>
+              </div>
+
+              <div className="space-y-2 max-h-64 overflow-y-auto">
+                {history.length === 0 ? (
+                  <p className="text-xs text-slate-500">No history yet</p>
+                ) : (
+                  history.map((item) => (
+                    <button
+                      key={item.id}
+                      onClick={() => {
+                        setText(item.original);
+                        setResult(item.result);
+                      }}
+                      className="w-full text-left p-3 rounded-lg border border-white/10 hover:bg-white/5 transition"
+                    >
+                      <p className="text-sm text-slate-200 truncate">
+                        {item.original}
+                      </p>
+                      <p className="text-xs text-slate-500 mt-1">
+                        {item.timestamp}
+                      </p>
+                    </button>
+                  ))
+                )}
+              </div>
             </div>
 
             <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-white/5 cursor-pointer">
