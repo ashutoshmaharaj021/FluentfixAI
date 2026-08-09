@@ -10,6 +10,7 @@ import {
   Check,
 } from "lucide-react";
 import api from "../services/api";
+import jsPDF from "jspdf";
 
 function Workspace() {
   const [text, setText] = useState("");
@@ -53,10 +54,10 @@ function Workspace() {
     }
   };
 
-  const handleExportTxt = () => {
-    if (!result) return;
+ const handleExportTxt = () => {
+  if (!result) return;
 
-    const content = `FluentFix AI Correction
+  const content = `FluentFix AI Correction
 
 Original:
 ${result.original}
@@ -77,16 +78,52 @@ Confidence:
 ${Math.round(result.confidence * 100)}%
 `;
 
-    const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
+  const blob = new Blob([content], {
+    type: "text/plain;charset=utf-8",
+  });
 
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "fluentfix-correction.txt";
-    link.click();
+  const url = URL.createObjectURL(blob);
 
-    URL.revokeObjectURL(url);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "fluentfix-correction.txt";
+  link.click();
+
+  URL.revokeObjectURL(url);
+};
+
+const handleExportPDF = () => {
+  if (!result) return;
+
+  const doc = new jsPDF();
+
+  doc.setFontSize(20);
+  doc.text("FluentFix AI Correction Report", 20, 20);
+
+  doc.setFontSize(12);
+
+  let y = 35;
+
+  const addSection = (title, content) => {
+    doc.setFont(undefined, "bold");
+    doc.text(title, 20, y);
+    y += 8;
+
+    doc.setFont(undefined, "normal");
+    const lines = doc.splitTextToSize(content || "", 170);
+    doc.text(lines, 20, y);
+    y += lines.length * 7 + 6;
   };
+
+  addSection("Original", result.original);
+  addSection("Spelling", result.spelling);
+  addSection("Grammar", result.grammar);
+  addSection("Fluency", result.fluency);
+  addSection("Final Corrected Text", result.corrected);
+  addSection("Confidence", `${Math.round(result.confidence * 100)}%`);
+
+  doc.save("fluentfix-correction.pdf");
+};
 
   return (
     <div className="min-h-screen bg-[#060B16] text-white flex">
@@ -137,9 +174,8 @@ ${Math.round(result.confidence * 100)}%
               Improve grammar, spelling, and fluency
             </p>
           </div>
-
           <button
-            onClick={handleExportTxt}
+            onClick={handleExportPDF}
             disabled={!result}
             className="bg-white/5 border border-white/10 px-4 py-2 rounded-lg hover:bg-white/10 disabled:opacity-40 disabled:cursor-not-allowed transition"
           >
