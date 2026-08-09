@@ -1,5 +1,12 @@
 import { useState } from "react";
-import { Sparkles, FileText, History, Settings, Wand2 } from "lucide-react";
+import {
+  Sparkles,
+  FileText,
+  History,
+  Settings,
+  Wand2,
+  Loader2,
+} from "lucide-react";
 import api from "../services/api";
 
 function Workspace() {
@@ -9,30 +16,27 @@ function Workspace() {
   const [error, setError] = useState("");
 
   const handleCorrection = async () => {
-  if (!text.trim()) return;
+    if (!text.trim()) return;
 
-  setLoading(true);
-  setError("");
+    setLoading(true);
+    setError("");
 
-  try {
-    const response = await api.post("/corrections/", {
-      text: text,
-    });
+    try {
+      const response = await api.post("/corrections/", {
+        text: text,
+      });
 
-    setResult(response.data);
-  } catch (err) {
-    console.error(err);
-    setError("Failed to connect to the backend.");
-  } finally {
-    setLoading(false);
-  }
-};
-
-
+      setResult(response.data);
+    } catch (err) {
+      console.error(err);
+      setError("Failed to connect to the backend.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#060B16] text-white flex">
-
       {/* Sidebar */}
       <aside className="w-64 border-r border-white/10 bg-[#0B1220] p-6 hidden md:flex flex-col justify-between">
         <div>
@@ -67,14 +71,11 @@ function Workspace() {
           </div>
         </div>
 
-        <p className="text-xs text-slate-500">
-          FluentFix AI Workspace
-        </p>
+        <p className="text-xs text-slate-500">FluentFix AI Workspace</p>
       </aside>
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col">
-
         {/* Top Bar */}
         <div className="h-16 border-b border-white/10 flex items-center justify-between px-8 bg-[#060B16]">
           <div>
@@ -91,9 +92,7 @@ function Workspace() {
 
         {/* Editor */}
         <div className="flex-1 p-8 overflow-auto">
-
           <div className="grid lg:grid-cols-2 gap-8">
-
             {/* Input */}
             <div className="bg-[#0B1220] border border-white/10 rounded-2xl p-6">
               <h3 className="text-xl font-semibold mb-2">Input Text</h3>
@@ -110,7 +109,15 @@ function Workspace() {
 
               <div className="mt-4 flex justify-between text-sm text-slate-400">
                 <span>{text.length} characters</span>
-                <button className="text-cyan-400 hover:text-cyan-300">
+
+                <button
+                  onClick={() => {
+                    setText("");
+                    setResult(null);
+                    setError("");
+                  }}
+                  className="text-cyan-400 hover:text-cyan-300"
+                >
                   Clear
                 </button>
               </div>
@@ -122,63 +129,82 @@ function Workspace() {
               <p className="text-sm text-slate-400 mb-4">
                 AI suggestions will appear here.
               </p>
-<div className="h-[420px] border border-white/10 rounded-xl p-4 text-slate-300 overflow-auto space-y-4">
-  {loading ? (
-    <div className="flex flex-col items-center justify-center h-full text-center">
-      <div className="w-10 h-10 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-      <p className="text-cyan-300 font-medium">Refining your writing...</p>
-      <p className="text-sm text-slate-500 mt-1">
-        AI is analyzing grammar, spelling, and fluency.
-      </p>
-    </div>
-  ) : result ? (
-    <>
-      <div>
-        <h4 className="text-cyan-400 font-semibold mb-1">Original</h4>
-        <p>{result.original}</p>
-      </div>
 
-      <div>
-        <h4 className="text-cyan-400 font-semibold mb-1">Spelling</h4>
-        <p>{result.spelling}</p>
-      </div>
+              <div className="h-[420px] border border-white/10 rounded-xl p-4 overflow-auto">
+                {loading ? (
+                  <div className="flex items-center justify-center h-full text-slate-400">
+                    <div className="text-center">
+                      <Loader2
+                        size={40}
+                        className="animate-spin mx-auto mb-4 text-cyan-400"
+                      />
+                      <p className="text-lg font-medium">
+                        AI is analyzing your text...
+                      </p>
+                      <p className="text-sm mt-2">
+                        Checking spelling, grammar, and fluency
+                      </p>
+                    </div>
+                  </div>
+                ) : result ? (
+                  <div className="space-y-4">
+                    <div>
+                      <h4 className="text-cyan-400 font-semibold mb-1">
+                        Original
+                      </h4>
+                      <p>{result.original}</p>
+                    </div>
 
-      <div>
-        <h4 className="text-cyan-400 font-semibold mb-1">Grammar</h4>
-        <p>{result.grammar}</p>
-      </div>
+                    <div>
+                      <h4 className="text-cyan-400 font-semibold mb-1">
+                        Spelling
+                      </h4>
+                      <p>{result.spelling}</p>
+                    </div>
 
-      <div>
-        <h4 className="text-cyan-400 font-semibold mb-1">Fluency</h4>
-        <p>{result.fluency}</p>
-      </div>
+                    <div>
+                      <h4 className="text-cyan-400 font-semibold mb-1">
+                        Grammar
+                      </h4>
+                      <p>{result.grammar}</p>
+                    </div>
 
-      <div className="pt-3 border-t border-white/10">
-        <h4 className="text-cyan-400 font-semibold mb-2">Final Corrected Text</h4>
-        <p className="text-white">{result.corrected}</p>
-      </div>
-    </>
-  ) : (
-    <p className="text-slate-500">
-      Your corrected text will appear here after clicking “Correct All”.
-    </p>
-  )}
+                    <div>
+                      <h4 className="text-cyan-400 font-semibold mb-1">
+                        Fluency
+                      </h4>
+                      <p>{result.fluency}</p>
+                    </div>
 
-  {error && (
-    <p className="text-red-400 text-sm mt-4">{error}</p>
-  )}
-</div>
+                    <div className="pt-3 border-t border-white/10">
+                      <h4 className="text-cyan-400 font-semibold mb-2">
+                        Final Corrected Text
+                      </h4>
+                      <p className="text-white">{result.corrected}</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center h-full text-slate-500">
+                    Your corrected text will appear here after clicking
+                    “Correct AI”.
+                  </div>
+                )}
+
+                {error && (
+                  <p className="text-red-400 text-sm mt-4">{error}</p>
+                )}
+              </div>
 
               <div className="mt-4 flex items-center gap-3 text-sm">
                 <div className="px-3 py-2 rounded-lg bg-white/5 border border-white/10">
-                  Confidence: —
+                  Confidence: {result ? `${Math.round(result.confidence * 100)}%` : "—"}
                 </div>
+
                 <div className="px-3 py-2 rounded-lg bg-white/5 border border-white/10">
                   Grammar
                 </div>
               </div>
             </div>
-
           </div>
 
           {/* Action Buttons */}
@@ -198,17 +224,25 @@ function Workspace() {
                 Fluency
               </button>
 
-             <button
-  onClick={handleCorrection}
-  disabled={loading}
-  className="bg-cyan-500 hover:bg-cyan-400 disabled:opacity-50 disabled:cursor-not-allowed text-black font-semibold rounded-xl py-4 flex items-center justify-center gap-2 transition"
->
-  <Wand2 size={18} />
-  {loading ? "Correcting..." : "Correct All"}
-</button>
+              <button
+                onClick={handleCorrection}
+                disabled={loading}
+                className="bg-cyan-500 hover:bg-cyan-400 disabled:opacity-60 disabled:cursor-not-allowed text-black font-semibold rounded-xl py-4 flex items-center justify-center gap-2 transition"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 size={18} className="animate-spin" />
+                    Correcting...
+                  </>
+                ) : (
+                  <>
+                    <Wand2 size={18} />
+                    Correct AI
+                  </>
+                )}
+              </button>
             </div>
           </div>
-
         </div>
       </main>
     </div>
