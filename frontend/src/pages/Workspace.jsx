@@ -22,6 +22,11 @@ function Workspace() {
     const saved = localStorage.getItem("fluentfix-history");
     return saved ? JSON.parse(saved) : [];
   });
+  const [currentDocId, setCurrentDocId] = useState(null);
+  const [documentCount, setDocumentCount] = useState(() => {
+    const saved = localStorage.getItem("fluentfix-document-count");
+    return saved ? parseInt(saved) : 1;
+  });
 
   const handleCorrection = async () => {
     if (!text.trim()) return;
@@ -33,17 +38,19 @@ function Workspace() {
       const response = await api.post("/corrections/", {
         text: text,
       });
-
       setResult(response.data);
-      const newEntry = {
-        id: Date.now(),
-        original: response.data.original,
-        corrected: response.data.corrected,
-        result: response.data,
-        timestamp: new Date().toLocaleString(),
-      };
 
-      const updatedHistory = [newEntry, ...history].slice(0, 10);
+      const updatedHistory = history.map((doc) =>
+        doc.id === currentDocId
+          ? {
+              ...doc,
+              original: response.data.original,
+              corrected: response.data.corrected,
+              result: response.data,
+              timestamp: new Date().toLocaleString(),
+            }
+          : doc,
+      );
 
       setHistory(updatedHistory);
       localStorage.setItem("fluentfix-history", JSON.stringify(updatedHistory));
@@ -141,6 +148,36 @@ ${Math.round(result.confidence * 100)}%
     doc.save("fluentfix-correction.pdf");
   };
 
+  const handleNewDocument = () => {
+    const newId = Date.now();
+    const title =
+      documentCount === 1 ? "Untitled Document" : `Untitled ${documentCount}`;
+
+    const newDocument = {
+      id: newId,
+      title,
+      original: "",
+      corrected: "",
+      result: null,
+      timestamp: new Date().toLocaleString(),
+    };
+
+    const updatedHistory = [newDocument, ...history];
+
+    setHistory(updatedHistory);
+    localStorage.setItem("fluentfix-history", JSON.stringify(updatedHistory));
+
+    setText("");
+    setResult(null);
+    setError("");
+    setCopied(false);
+    setCurrentDocId(newId);
+
+    const newCount = documentCount + 1;
+    setDocumentCount(newCount);
+    localStorage.setItem("fluentfix-document-count", newCount.toString());
+  };
+
   return (
     <div className="min-h-screen bg-[#060B16] text-white flex">
       {/* Sidebar */}
@@ -154,8 +191,10 @@ ${Math.round(result.confidence * 100)}%
               FluentFix <span className="text-cyan-400">AI</span>
             </h1>
           </div>
-
-          <button className="w-full bg-cyan-500 hover:bg-cyan-400 text-black font-semibold rounded-xl py-3 mb-8 transition">
+          <button
+            onClick={handleNewDocument}
+            className="w-full bg-cyan-500 hover:bg-cyan-400 text-black font-semibold rounded-xl py-3 mb-8 transition"
+          >
             + New Document
           </button>
 
@@ -169,24 +208,29 @@ ${Math.round(result.confidence * 100)}%
             <div className="mt-6">
               <div className="flex items-center gap-2 mb-3 text-slate-400">
                 <History size={16} />
-                <span className="text-sm font-medium">Recent History</span>
+                <span className="text-sm font-medium">Documents</span>
               </div>
 
               <div className="space-y-2 max-h-64 overflow-y-auto">
                 {history.length === 0 ? (
-                  <p className="text-xs text-slate-500">No history yet</p>
+                  <p className="text-xs text-slate-500">No documents yet</p>
                 ) : (
                   history.map((item) => (
                     <button
                       key={item.id}
                       onClick={() => {
-                        setText(item.original);
-                        setResult(item.result);
+                        setCurrentDocId(item.id);
+                        setText(item.original || "");
+                        setResult(item.result || null);
                       }}
-                      className="w-full text-left p-3 rounded-lg border border-white/10 hover:bg-white/5 transition"
+                      className={`w-full text-left p-3 rounded-lg border transition ${
+                        currentDocId === item.id
+                          ? "border-cyan-500 bg-cyan-500/10"
+                          : "border-white/10 hover:bg-white/5"
+                      }`}
                     >
                       <p className="text-sm text-slate-200 truncate">
-                        {item.original}
+                        {item.title}
                       </p>
                       <p className="text-xs text-slate-500 mt-1">
                         {item.timestamp}
