@@ -27,6 +27,8 @@ function Workspace() {
     const saved = localStorage.getItem("fluentfix-document-count");
     return saved ? parseInt(saved) : 1;
   });
+  const [editingDocId, setEditingDocId] = useState(null);
+  const [editingTitle, setEditingTitle] = useState("");
 
   const handleCorrection = async () => {
     if (!text.trim()) return;
@@ -162,6 +164,8 @@ ${Math.round(result.confidence * 100)}%
       timestamp: new Date().toLocaleString(),
     };
 
+   
+
     const updatedHistory = [newDocument, ...history];
 
     setHistory(updatedHistory);
@@ -177,6 +181,32 @@ ${Math.round(result.confidence * 100)}%
     setDocumentCount(newCount);
     localStorage.setItem("fluentfix-document-count", newCount.toString());
   };
+
+
+   const handleRenameDocument = (docId) => {
+      const newTitle = editingTitle.trim();
+
+      if (!newTitle) {
+        setEditingDocId(null);
+        setEditingTitle("");
+        return;
+      }
+
+      const updatedHistory = history.map((doc) =>
+        doc.id === docId
+          ? {
+              ...doc,
+              title: newTitle,
+            }
+          : doc,
+      );
+
+      setHistory(updatedHistory);
+      localStorage.setItem("fluentfix-history", JSON.stringify(updatedHistory));
+
+      setEditingDocId(null);
+      setEditingTitle("");
+    };
 
   return (
     <div className="min-h-screen bg-[#060B16] text-white flex">
@@ -215,28 +245,62 @@ ${Math.round(result.confidence * 100)}%
                 {history.length === 0 ? (
                   <p className="text-xs text-slate-500">No documents yet</p>
                 ) : (
-                  history.map((item) => (
-                    <button
-                      key={item.id}
-                      onClick={() => {
-                        setCurrentDocId(item.id);
-                        setText(item.original || "");
-                        setResult(item.result || null);
-                      }}
-                      className={`w-full text-left p-3 rounded-lg border transition ${
-                        currentDocId === item.id
-                          ? "border-cyan-500 bg-cyan-500/10"
-                          : "border-white/10 hover:bg-white/5"
-                      }`}
-                    >
-                      <p className="text-sm text-slate-200 truncate">
-                        {item.title}
-                      </p>
-                      <p className="text-xs text-slate-500 mt-1">
-                        {item.timestamp}
-                      </p>
-                    </button>
-                  ))
+                    history.map((item) => (
+                      <button
+                        key={item.id}
+                        onClick={() => {
+                          if (editingDocId !== null) return;
+
+                          setCurrentDocId(item.id);
+                          setText(item.original || "");
+                          setResult(item.result || null);
+                        }}
+                        className={`w-full text-left p-3 rounded-lg border transition ${
+                          currentDocId === item.id
+                            ? "border-cyan-500 bg-cyan-500/10"
+                            : "border-white/10 hover:bg-white/5"
+                        }`}
+                      >
+                        {editingDocId === item.id ? (
+                          <input
+                            value={editingTitle}
+                            onChange={(e) => setEditingTitle(e.target.value)}
+                            onClick={(e) => e.stopPropagation()}
+                            onDoubleClick={(e) => e.stopPropagation()}
+                            onBlur={() => handleRenameDocument(item.id)}
+                            onKeyDown={(e) => {
+                              e.stopPropagation();
+
+                              if (e.key === "Enter") {
+                                e.preventDefault();
+                                handleRenameDocument(item.id);
+                              }
+
+                              if (e.key === "Escape") {
+                                setEditingDocId(null);
+                                setEditingTitle("");
+                              }
+                            }}
+                            autoFocus
+                            className="w-full bg-transparent text-sm text-slate-200 outline-none border-b border-cyan-500"
+                          />
+                        ) : (
+                          <div
+                            className="text-sm text-slate-200 truncate cursor-text"
+                            onDoubleClick={(e) => {
+                              e.stopPropagation();
+                              setEditingDocId(item.id);
+                              setEditingTitle(item.title);
+                            }}
+                          >
+                            {item.title}
+                          </div>
+                        )}
+                        <p className="text-xs text-slate-500 mt-1">
+                          {item.timestamp}
+                        </p>
+                      </button>
+                    ))
                 )}
               </div>
             </div>
