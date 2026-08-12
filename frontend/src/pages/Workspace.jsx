@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState, useEffect } from "react";
 import {
   Sparkles,
   FileText,
@@ -8,6 +8,7 @@ import {
   Loader2,
   Copy,
   Check,
+  Trash2,
 } from "lucide-react";
 import api from "../services/api";
 import jsPDF from "jspdf";
@@ -17,6 +18,7 @@ function Workspace() {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [saveStatus, setSaveStatus] = useState("Saved");
   const [copied, setCopied] = useState(false);
   const [history, setHistory] = useState(() => {
     const saved = localStorage.getItem("fluentfix-history");
@@ -25,7 +27,7 @@ function Workspace() {
   const [currentDocId, setCurrentDocId] = useState(null);
   const [documentCount, setDocumentCount] = useState(() => {
     const saved = localStorage.getItem("fluentfix-document-count");
-    return saved ? parseInt(saved) : 1;
+    return saved ? parseInt(saved, 10) : 1;
   });
   const [editingDocId, setEditingDocId] = useState(null);
   const [editingTitle, setEditingTitle] = useState("");
@@ -37,9 +39,7 @@ function Workspace() {
     setError("");
 
     try {
-      const response = await api.post("/corrections/", {
-        text: text,
-      });
+      const response = await api.post("/corrections/", { text });
       setResult(response.data);
 
       const updatedHistory = history.map((doc) =>
@@ -70,10 +70,7 @@ function Workspace() {
     try {
       await navigator.clipboard.writeText(result.corrected);
       setCopied(true);
-
-      setTimeout(() => {
-        setCopied(false);
-      }, 2000);
+      setTimeout(() => setCopied(false), 2000);
     } catch (err) {
       console.error("Copy failed:", err);
     }
@@ -82,38 +79,18 @@ function Workspace() {
   const handleExportTxt = () => {
     if (!result) return;
 
-    const content = `FluentFix AI Correction
-
-Original:
-${result.original}
-
-Spelling:
-${result.spelling}
-
-Grammar:
-${result.grammar}
-
-Fluency:
-${result.fluency}
-
-Final Corrected Text:
-${result.corrected}
-
-Confidence:
-${Math.round(result.confidence * 100)}%
-`;
+    const content = `FluentFix AI Correction\n\nOriginal:\n${result.original}\n\nSpelling:\n${result.spelling}\n\nGrammar:\n${result.grammar}\n\nFluency:\n${result.fluency}\n\nFinal Corrected Text:\n${result.corrected}\n\nConfidence:\n${Math.round(result.confidence * 100)}%\n`;
 
     const blob = new Blob([content], {
       type: "text/plain;charset=utf-8",
     });
 
     const url = URL.createObjectURL(blob);
-
     const link = document.createElement("a");
+
     link.href = url;
     link.download = "fluentfix-correction.txt";
     link.click();
-
     URL.revokeObjectURL(url);
   };
 
@@ -121,12 +98,10 @@ ${Math.round(result.confidence * 100)}%
     if (!result) return;
 
     const doc = new jsPDF();
-
     doc.setFontSize(20);
     doc.text("FluentFix AI Correction Report", 20, 20);
 
     doc.setFontSize(12);
-
     let y = 35;
 
     const addSection = (title, content) => {
@@ -164,53 +139,138 @@ ${Math.round(result.confidence * 100)}%
       timestamp: new Date().toLocaleString(),
     };
 
-   
-
     const updatedHistory = [newDocument, ...history];
-
     setHistory(updatedHistory);
     localStorage.setItem("fluentfix-history", JSON.stringify(updatedHistory));
-
     setText("");
     setResult(null);
     setError("");
     setCopied(false);
     setCurrentDocId(newId);
+    localStorage.setItem("fluentfix-current-doc", String(newId));
 
     const newCount = documentCount + 1;
     setDocumentCount(newCount);
     localStorage.setItem("fluentfix-document-count", newCount.toString());
   };
 
+  const handleRenameDocument = (docId) => {
+    const newTitle = editingTitle.trim();
 
-   const handleRenameDocument = (docId) => {
-      const newTitle = editingTitle.trim();
+    if (!newTitle) {
+      setEditingDocId(null);
+      setEditingTitle("");
+      return;
+    }
 
-      if (!newTitle) {
-        setEditingDocId(null);
-        setEditingTitle("");
-        return;
+    const updatedHistory = history.map((doc) =>
+      doc.id === docId
+        ? {
+            ...doc,
+            title: newTitle,
+          }
+        : doc,
+    );
+
+    setHistory(updatedHistory);
+    localStorage.setItem("fluentfix-history", JSON.stringify(updatedHistory));
+    setEditingDocId(null);
+    setEditingTitle("");
+  };
+
+  const handleDeleteDocument = (docId) => {
+    const confirmDelete = window.confirm(
+      "Are you sure you want to delete this document?",
+    );
+
+    if (!confirmDelete) return;
+
+    const updatedHistory = history.filter((doc) => doc.id !== docId);
+    setHistory(updatedHistory);
+    localStorage.setItem("fluentfix-history", JSON.stringify(updatedHistory));
+
+    if (currentDocId === docId) {
+      if (updatedHistory.length > 0) {
+        const nextDoc = updatedHistory[0];
+        setCurrentDocId(nextDoc.id);
+        setText(nextDoc.original || "");
+        setResult(nextDoc.result || null);
+      } else {
+        setCurrentDocId(null);
+        setText("");
+        setResult(null);
       }
+    }
+  };
+  useEffect(() => {
+    if (!currentDocId) return;
 
+    // Show "Saving..." immediately when user types
+    setSaveStatus("Saving...");
+
+    const timer = setTimeout(() => {
       const updatedHistory = history.map((doc) =>
-        doc.id === docId
+        doc.id === currentDocId
           ? {
               ...doc,
-              title: newTitle,
+              original: text,
+              timestamp: new Date().toLocaleString(),
             }
           : doc,
       );
 
+      // Save to state and localStorage
       setHistory(updatedHistory);
       localStorage.setItem("fluentfix-history", JSON.stringify(updatedHistory));
 
-      setEditingDocId(null);
-      setEditingTitle("");
-    };
+      // After saving is complete
+      setSaveStatus("Saved");
+    }, 600); // save after user stops typing for 600ms
+
+    return () => clearTimeout(timer);
+  }, [text, currentDocId]); // IMPORTANT: do NOT include history here
+
+  useEffect(() => {
+    if (history.length === 0) {
+      // First time opening the app
+      const firstDoc = {
+        id: Date.now(),
+        title: "Untitled Document",
+        original: "",
+        corrected: "",
+        result: null,
+        timestamp: new Date().toLocaleString(),
+      };
+
+      setHistory([firstDoc]);
+      setCurrentDocId(firstDoc.id);
+
+      localStorage.setItem("fluentfix-history", JSON.stringify([firstDoc]));
+      localStorage.setItem("fluentfix-current-doc", String(firstDoc.id));
+
+      return;
+    }
+
+    const savedCurrentDocId = Number(
+      localStorage.getItem("fluentfix-current-doc"),
+    );
+
+    const activeDoc =
+      history.find((doc) => doc.id === savedCurrentDocId) || history[0];
+
+    setCurrentDocId(activeDoc.id);
+    setText(activeDoc.original || "");
+    setResult(activeDoc.result || null);
+  }, []);
+
+  useEffect(() => {
+    if (currentDocId) {
+      localStorage.setItem("fluentfix-current-doc", String(currentDocId));
+    }
+  }, [currentDocId]);
 
   return (
     <div className="min-h-screen bg-[#060B16] text-white flex">
-      {/* Sidebar */}
       <aside className="w-64 border-r border-white/10 bg-[#0B1220] p-6 hidden md:flex flex-col justify-between">
         <div>
           <div className="flex items-center gap-3 mb-10">
@@ -221,6 +281,7 @@ ${Math.round(result.confidence * 100)}%
               FluentFix <span className="text-cyan-400">AI</span>
             </h1>
           </div>
+
           <button
             onClick={handleNewDocument}
             className="w-full bg-cyan-500 hover:bg-cyan-400 text-black font-semibold rounded-xl py-3 mb-8 transition"
@@ -234,7 +295,6 @@ ${Math.round(result.confidence * 100)}%
               <span>Current Draft</span>
             </div>
 
-            {/* History Section */}
             <div className="mt-6">
               <div className="flex items-center gap-2 mb-3 text-slate-400">
                 <History size={16} />
@@ -245,69 +305,90 @@ ${Math.round(result.confidence * 100)}%
                 {history.length === 0 ? (
                   <p className="text-xs text-slate-500">No documents yet</p>
                 ) : (
-                    history.map((item) => (
-                      <button
-                        key={item.id}
-                        onClick={() => {
-                          if (editingDocId !== null) return;
+                  history.map((item) => (
+                    <div
+                      key={item.id}
+                      onClick={() => {
+                        if (editingDocId !== null) return;
 
-                          setCurrentDocId(item.id);
-                          setText(item.original || "");
-                          setResult(item.result || null);
-                        }}
-                        className={`w-full text-left p-3 rounded-lg border transition ${
-                          currentDocId === item.id
-                            ? "border-cyan-500 bg-cyan-500/10"
-                            : "border-white/10 hover:bg-white/5"
-                        }`}
-                      >
-                        {editingDocId === item.id ? (
-                          <input
-                            value={editingTitle}
-                            onChange={(e) => setEditingTitle(e.target.value)}
-                            onClick={(e) => e.stopPropagation()}
-                            onDoubleClick={(e) => e.stopPropagation()}
-                            onBlur={() => handleRenameDocument(item.id)}
-                            onKeyDown={(e) => {
-                              e.stopPropagation();
+                        setCurrentDocId(item.id);
 
-                              if (e.key === "Enter") {
-                                e.preventDefault();
-                                handleRenameDocument(item.id);
-                              }
+                        localStorage.setItem(
+                          "fluentfix-current-doc",
+                          String(item.id),
+                        );
 
-                              if (e.key === "Escape") {
-                                setEditingDocId(null);
-                                setEditingTitle("");
-                              }
-                            }}
-                            autoFocus
-                            className="w-full bg-transparent text-sm text-slate-200 outline-none border-b border-cyan-500"
-                          />
-                        ) : (
+                        setText(item.original || "");
+                        setResult(item.result || null);
+                      }}
+                      className={`w-full text-left p-3 rounded-lg border transition cursor-pointer ${
+                        currentDocId === item.id
+                          ? "border-cyan-500 bg-cyan-500/10"
+                          : "border-white/10 hover:bg-white/5"
+                      }`}
+                    >
+                      {editingDocId === item.id ? (
+                        <input
+                          value={editingTitle}
+                          onChange={(e) => setEditingTitle(e.target.value)}
+                          onClick={(e) => e.stopPropagation()}
+                          onDoubleClick={(e) => e.stopPropagation()}
+                          onBlur={() => handleRenameDocument(item.id)}
+                          onKeyDown={(e) => {
+                            e.stopPropagation();
+
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              handleRenameDocument(item.id);
+                            }
+
+                            if (e.key === "Escape") {
+                              setEditingDocId(null);
+                              setEditingTitle("");
+                            }
+                          }}
+                          autoFocus
+                          className="w-full bg-transparent text-sm text-slate-200 outline-none border-b border-cyan-500"
+                        />
+                      ) : (
+                        <div className="flex items-start justify-between gap-2 group">
                           <div
-                            className="text-sm text-slate-200 truncate cursor-text"
+                            className="flex-1 cursor-text"
                             onDoubleClick={(e) => {
                               e.stopPropagation();
                               setEditingDocId(item.id);
                               setEditingTitle(item.title);
                             }}
                           >
-                            {item.title}
+                            <p className="text-sm text-slate-200 truncate">
+                              {item.title}
+                            </p>
+                            <p className="text-xs text-slate-500 mt-1">
+                              {item.timestamp}
+                            </p>
                           </div>
-                        )}
-                        <p className="text-xs text-slate-500 mt-1">
-                          {item.timestamp}
-                        </p>
-                      </button>
-                    ))
-                )}
-              </div>
-            </div>
 
-            <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-white/5 cursor-pointer">
-              <Settings size={18} />
-              <span>Settings</span>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteDocument(item.id);
+                            }}
+                            className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-red-500/20 transition"
+                          >
+                            <Trash2 size={16} className="text-red-400" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  ))
+                )}
+
+                <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-white/5 cursor-pointer">
+                  <Settings size={18} />
+                  <span>Settings</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -315,15 +396,30 @@ ${Math.round(result.confidence * 100)}%
         <p className="text-xs text-slate-500">FluentFix AI Workspace</p>
       </aside>
 
-      {/* Main Content */}
       <main className="flex-1 flex flex-col">
-        {/* Top Bar */}
         <div className="h-16 border-b border-white/10 flex items-center justify-between px-8 bg-[#060B16]">
           <div>
             <h2 className="text-lg font-semibold">AI Writing Workspace</h2>
-            <p className="text-xs text-slate-400">
-              Improve grammar, spelling, and fluency
-            </p>
+
+            <div className="flex items-center gap-3 mt-1">
+              <p className="text-xs text-slate-400">
+                Improve grammar, spelling, and fluency
+              </p>
+
+              <div className="flex items-center gap-1 text-xs">
+                {saveStatus === "Saving..." ? (
+                  <>
+                    <Loader2 size={12} className="animate-spin text-cyan-400" />
+                    <span className="text-cyan-400">Saving...</span>
+                  </>
+                ) : (
+                  <>
+                    <Check size={12} className="text-green-400" />
+                    <span className="text-green-400">Saved</span>
+                  </>
+                )}
+              </div>
+            </div>
           </div>
           <button
             onClick={handleExportPDF}
@@ -334,10 +430,8 @@ ${Math.round(result.confidence * 100)}%
           </button>
         </div>
 
-        {/* Editor */}
         <div className="flex-1 p-8 overflow-auto">
           <div className="grid lg:grid-cols-2 gap-8">
-            {/* Input */}
             <div className="bg-[#0B1220] border border-white/10 rounded-2xl p-6">
               <h3 className="text-xl font-semibold mb-2">Input Text</h3>
               <p className="text-sm text-slate-400 mb-4">
@@ -353,7 +447,6 @@ ${Math.round(result.confidence * 100)}%
 
               <div className="mt-4 flex justify-between text-sm text-slate-400">
                 <span>{text.length} characters</span>
-
                 <button
                   onClick={() => {
                     setText("");
@@ -367,7 +460,6 @@ ${Math.round(result.confidence * 100)}%
               </div>
             </div>
 
-            {/* Output */}
             <div className="bg-[#0B1220] border border-white/10 rounded-2xl p-6">
               <h3 className="text-xl font-semibold mb-2">Corrected Output</h3>
               <p className="text-sm text-slate-400 mb-4">
@@ -461,7 +553,6 @@ ${Math.round(result.confidence * 100)}%
                   Confidence:{" "}
                   {result ? `${Math.round(result.confidence * 100)}%` : "—"}
                 </div>
-
                 <div className="px-3 py-2 rounded-lg bg-white/5 border border-white/10">
                   Grammar
                 </div>
@@ -469,7 +560,6 @@ ${Math.round(result.confidence * 100)}%
             </div>
           </div>
 
-          {/* Action Buttons */}
           <div className="mt-8 bg-[#0B1220] border border-white/10 rounded-2xl p-6">
             <h3 className="text-lg font-semibold mb-4">Correction Mode</h3>
 
@@ -477,15 +567,12 @@ ${Math.round(result.confidence * 100)}%
               <button className="border border-white/10 rounded-xl py-4 hover:bg-white/5 transition">
                 Spelling
               </button>
-
               <button className="border border-white/10 rounded-xl py-4 hover:bg-white/5 transition">
                 Grammar
               </button>
-
               <button className="border border-white/10 rounded-xl py-4 hover:bg-white/5 transition">
                 Fluency
               </button>
-
               <button
                 onClick={handleCorrection}
                 disabled={loading}
