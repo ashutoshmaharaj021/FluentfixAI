@@ -8,24 +8,15 @@ FluentFix AI is a full-stack writing assistant made up of a React workspace and 
 
 ## Features
 
-- ✍️ Writing workspace with a live input/output layout
-- 🔤 Spelling correction mode
-- 📝 Grammar correction mode
-- 🌊 Fluency correction mode
-- ✨ Combined "Correct AI" (all-in-one) mode
-- 🎯 Selected correction mode is highlighted and shown alongside the results
-- 📊 Confidence score displayed with each result
-- 📋 Copy corrected text to clipboard
-- 📄 Export result as TXT
-- 🧾 Export result as PDF (generated client-side with jsPDF)
-- 🗂️ Create, rename, delete, and switch between multiple documents
-- 💾 Autosave with a "Saving… / Saved" status indicator
-- 🕘 Document/correction history, stored in the browser
-- 🔁 Restoring a previously opened document's content and last result
-- ⏳ Loading state while a correction request is in flight
-- ⚠️ Basic error handling for failed backend requests
+- ✍️ AI-powered writing workspace with live input/output
+- 🔤 Spelling, grammar, and fluency correction modes
+- ✨ Combined **Correct AI** mode
+- 🎯 Selected correction mode with confidence score
+- 📋 Copy corrected text and export results as TXT/PDF
+- 🗂️ Create, rename, delete, and switch between documents
+- 💾 Autosave with **Saving / Saved** status and document history
+- 🔄 Persistent documents with loading and error handling
 
-> > All document/history data is persisted in the browser's `localStorage` — there is currently no server-side storage of documents or correction history (see [Known Limitations](#known-limitations)).
 
 ## How It Works
 
