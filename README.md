@@ -264,16 +264,6 @@ Checks database connectivity by running `SELECT 1`.
 Root endpoint, returns a welcome message and the current `DEBUG` value.
 
 
-
-## Known Limitations
-
-- Documents and correction history are stored only in the browser's `localStorage` — clearing browser data removes all saved work.
-- The `confidence` score returned by the API is a hardcoded value (`0.98`), not a calculated metric.
-- No authentication or user accounts.
-- Database connectivity is wired up (SQLAlchemy, `asyncpg`/`psycopg`) but no models or persistence logic for documents/corrections exist yet — the database is currently used only for a basic health check.
-- `.env.example` variable names don't fully match the variables required in `app/config/settings.py`.
-- Several frontend component files (`ConfidenceBar.jsx`, `Footer.jsx`, `Loading.jsx`, `ResultCard.jsx`, `TextEditor.jsx`) are currently empty/unused.
-
 ## Contributing
 
 Contributions are welcome. Please open an issue to discuss significant changes before submitting a pull request.
