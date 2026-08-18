@@ -110,7 +110,6 @@ flowchart TD
 | Database layer | SQLAlchemy (async), `asyncpg`, `psycopg[binary]`, `alembic` |
 | Dependency management | `uv` (`pyproject.toml` + `uv.lock`); `requirements.txt` is also provided |
 
-> **Note:** The backend wires up an async SQLAlchemy engine and a `/health/database` endpoint that runs `SELECT 1`, but no SQLAlchemy models are currently defined (`app/models/` only contains an empty `__init__.py`). The database is not currently used to store documents or corrections.
 
 ## Project Structure
 
@@ -175,11 +174,11 @@ FluentfixAI/
             ├── Features.jsx
             ├── About.jsx
             ├── TextInput.jsx
-            ├── ConfidenceBar.jsx    # currently empty
-            ├── Footer.jsx           # currently empty
-            ├── Loading.jsx          # currently empty
-            ├── ResultCard.jsx       # currently empty
-            └── TextEditor.jsx       # currently empty
+            ├── ConfidenceBar.jsx   
+            ├── Footer.jsx          
+            ├── Loading.jsx         
+            ├── ResultCard.jsx      
+            └── TextEditor.jsx      
 ```
 
 ## Installation
@@ -231,7 +230,6 @@ Defined in `app/config/settings.py` and required for the backend to start (see `
 | `DATABASE_URL` | Full async SQLAlchemy connection string (e.g. `postgresql+asyncpg://user:password@host:port/dbname`) |
 | `MODEL_PATH` | Path setting reserved for AI model storage |
 
-> `backend/.env.example` currently lists some of these under different names (`DB_HOST`, `DB_PORT`, etc.), which do not match the field names required by `settings.py`. Use the variable names in the table above when creating your `.env`.
 
 ## Running the Application
 
@@ -274,50 +272,7 @@ Checks database connectivity by running `SELECT 1`.
 
 Root endpoint, returns a welcome message and the current `DEBUG` value.
 
-## Example Request
 
-```bash
-curl -X POST http://127.0.0.1:8000/corrections/ \
-  -H "Content-Type: application/json" \
-  -d '{"text": "i hav a dreem", "mode": "all"}'
-```
-
-## Example Response
-
-```json
-{
-  "original": "i hav a dreem",
-  "spelling": "i have a dream",
-  "grammar": "I have a dream.",
-  "fluency": "I have a dream.",
-  "corrected": "I have a dream.",
-  "confidence": 0.98
-}
-```
-
-> Actual grammar/fluency output will vary based on the loaded T5 model and LanguageTool's rules; `confidence` is currently a fixed value returned by the backend rather than a computed score.
-
-## Screenshots
-
-![FluentFix AI Workspace](screenshots/workspace.png)
-
-![Correction Modes](screenshots/correction-modes.png)
-
-![Correction Result](screenshots/correction-result.png)
-
-*[ADD SCREENSHOT] — screenshots are not yet included in the repository.*
-
-## Future Improvements
-
-The following features are planned for future versions of FluentFix AI:
-
-- ☁️ **Cloud document storage** — Persist documents and correction history on the server instead of relying only on browser storage.
-- 📊 **Real confidence scoring** — Replace the current fixed confidence value with a dynamically calculated confidence score.
-- 🧠 **Advanced contextual rewriting** — Provide more context-aware suggestions for improving clarity, tone, and readability.
-- 👤 **User authentication** — Add user accounts and personalized workspaces.
-- 🔎 **Document search** — Allow users to quickly search through their saved documents.
-- 📈 **Writing analytics** — Provide insights into writing quality, common errors, and correction patterns.
-- 🌐 **Production deployment** — Deploy the frontend and backend for public access.
 
 ## Known Limitations
 
