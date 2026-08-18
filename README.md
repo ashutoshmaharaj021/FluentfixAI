@@ -276,6 +276,5 @@ Licensed under the [MIT License](LICENSE).
 
 **Ashutosh Maharaj**
 GitHub: [ashutoshmaharaj021](https://github.com/ashutoshmaharaj021)
-Project: [FluentfixAI](https://github.com/ashutoshmaharaj021/FluentfixAI)
 
-[ADD LIVE DEMO URL]
+Project: [FluentfixAI](https://github.com/ashutoshmaharaj021/FluentfixAI)
