@@ -495,7 +495,7 @@ function Workspace() {
                 <div className="px-3 py-2 rounded-lg bg-white/5 border border-white/10">
                   Confidence: {result ? `${Math.round(result.confidence * 100)}%` : "—"}
                 </div>
-                <div className="px-3 py-2 rounded-lg bg-white/5 border border-white/10">Grammar</div>
+                <div className="px-3 py-2 rounded-lg bg-white/5 border border-white/10">{mode === "all" ? "All" : mode}</div>
               </div>
             </div>
           </div>
@@ -538,10 +538,7 @@ function Workspace() {
               </button>
 
               <button
-                onClick={() => {
-                  setMode("all");
-                  handleCorrection();
-                }}
+                onClick={handleCorrection}
                 disabled={loading}
                 className={`rounded-xl py-4 flex items-center justify-center gap-2 transition ${
                   mode === "all"
