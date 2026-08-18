@@ -35,28 +35,13 @@ FluentFix AI is a full-stack writing assistant made up of a React workspace and 
 | Fluency | `fluency` | Fluency correction only |
 | Correct AI (all) | `all` (default) | Spelling → Grammar → Fluency, chained |
 
-In "all" mode, each stage's output is fed into the next: the spelling-corrected text is passed to the grammar corrector, and that result is passed to the fluency checker.
+### Correction Modes
 
-### Spelling correction
-
-Implemented with **SymSpell** (`symspellpy`) and **wordfreq**. A dictionary is built at startup from the top 100,000 English words in `wordfreq`, filtered to words with a Zipf frequency ≥ 3.5. For each word in the input, punctuation is stripped and preserved, common words (Zipf frequency ≥ 3.5) are left untouched, and uncommon words are looked up in SymSpell (max edit distance 2) for the closest correction, preserving original capitalization.
-
-### Grammar correction
-
-Implemented with a Hugging Face **transformers** sequence-to-sequence model, `vennify/t5-base-grammar-correction`, run locally via PyTorch (`torch`). The input text is prefixed with `"grammar: "`, tokenized, and passed to `model.generate()` with beam search (4 beams, max length 512).
-
-### Fluency correction
-
-Implemented with **LanguageTool** via the `language_tool_python` package (`en-US` ruleset). The text is checked and corrected using LanguageTool's built-in rule-based corrections.
-
-### Selected mode: frontend → backend
-
-The workspace keeps the selected mode in React state and sends it as the `mode` field in the JSON body of the `POST /corrections/` request. The backend's `CorrectionRequest` schema defaults `mode` to `"all"` if not provided.
-
-### API response contents
-
-The response always includes all four text fields (`original`, `spelling`, `grammar`, `fluency`) plus `corrected` and `confidence` — for single-stage modes, the fields for skipped stages are simply set to the original input text. The backend currently returns a fixed `confidence` value of `0.98` for every request.
-
+- **Spelling:** Uses SymSpell and `wordfreq` to detect and correct spelling mistakes.
+- **Grammar:** Uses the Hugging Face `vennify/t5-base-grammar-correction` model with PyTorch.
+- **Fluency:** Uses LanguageTool with the `en-US` ruleset for rule-based writing improvements.
+- **Selected Mode:** The frontend sends the selected mode to the FastAPI backend through `POST /corrections/`.
+- **Response:** Returns the original text, individual correction results, final corrected text, and confidence score.
 ## Architecture
 
 ```mermaid
