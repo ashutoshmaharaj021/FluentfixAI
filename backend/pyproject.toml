@@ -9,6 +9,7 @@ dependencies = [
     "alembic>=1.18.5",
     "asyncpg>=0.31.0",
     "fastapi>=0.139.2",
+    "language-tool-python>=3.4.0",
     "psycopg[binary]>=3.3.4",
     "pydantic-settings>=2.14.2",
     "python-dotenv>=1.2.2",

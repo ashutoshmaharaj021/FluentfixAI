@@ -3,6 +3,7 @@ from pydantic import BaseModel
 
 class CorrectionRequest(BaseModel):
     text: str
+    mode: str = "all"   # default mode
 
 
 class CorrectionResponse(BaseModel):

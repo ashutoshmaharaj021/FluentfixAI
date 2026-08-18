@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from "react";
+﻿import { useEffect, useState } from "react";
 import {
   Sparkles,
   FileText,
@@ -15,6 +15,7 @@ import jsPDF from "jspdf";
 
 function Workspace() {
   const [text, setText] = useState("");
+  const [mode, setMode] = useState("all");
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -39,7 +40,7 @@ function Workspace() {
     setError("");
 
     try {
-      const response = await api.post("/corrections/", { text });
+      const response = await api.post("/corrections/", { text, mode });
       setResult(response.data);
 
       const updatedHistory = history.map((doc) =>
@@ -79,15 +80,13 @@ function Workspace() {
   const handleExportTxt = () => {
     if (!result) return;
 
-    const content = `FluentFix AI Correction\n\nOriginal:\n${result.original}\n\nSpelling:\n${result.spelling}\n\nGrammar:\n${result.grammar}\n\nFluency:\n${result.fluency}\n\nFinal Corrected Text:\n${result.corrected}\n\nConfidence:\n${Math.round(result.confidence * 100)}%\n`;
+    const content = `FluentFix AI Correction\n\nOriginal:\n${result.original}\n\nSpelling:\n${result.spelling}\n\nGrammar:\n${result.grammar}\n\nFluency:\n${result.fluency}\n\nFinal Corrected Text:\n${result.corrected}\n\nConfidence:\n${Math.round(
+      result.confidence * 100
+    )}%\n`;
 
-    const blob = new Blob([content], {
-      type: "text/plain;charset=utf-8",
-    });
-
+    const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
-
     link.href = url;
     link.download = "fluentfix-correction.txt";
     link.click();
@@ -156,7 +155,6 @@ function Workspace() {
 
   const handleRenameDocument = (docId) => {
     const newTitle = editingTitle.trim();
-
     if (!newTitle) {
       setEditingDocId(null);
       setEditingTitle("");
@@ -164,12 +162,7 @@ function Workspace() {
     }
 
     const updatedHistory = history.map((doc) =>
-      doc.id === docId
-        ? {
-            ...doc,
-            title: newTitle,
-          }
-        : doc,
+      doc.id === docId ? { ...doc, title: newTitle } : doc,
     );
 
     setHistory(updatedHistory);
@@ -182,7 +175,6 @@ function Workspace() {
     const confirmDelete = window.confirm(
       "Are you sure you want to delete this document?",
     );
-
     if (!confirmDelete) return;
 
     const updatedHistory = history.filter((doc) => doc.id !== docId);
@@ -202,37 +194,29 @@ function Workspace() {
       }
     }
   };
+
   useEffect(() => {
     if (!currentDocId) return;
 
-    // Show "Saving..." immediately when user types
     setSaveStatus("Saving...");
 
     const timer = setTimeout(() => {
       const updatedHistory = history.map((doc) =>
         doc.id === currentDocId
-          ? {
-              ...doc,
-              original: text,
-              timestamp: new Date().toLocaleString(),
-            }
+          ? { ...doc, original: text, timestamp: new Date().toLocaleString() }
           : doc,
       );
 
-      // Save to state and localStorage
       setHistory(updatedHistory);
       localStorage.setItem("fluentfix-history", JSON.stringify(updatedHistory));
-
-      // After saving is complete
       setSaveStatus("Saved");
-    }, 600); // save after user stops typing for 600ms
+    }, 600);
 
     return () => clearTimeout(timer);
-  }, [text, currentDocId]); // IMPORTANT: do NOT include history here
+  }, [text, currentDocId]);
 
   useEffect(() => {
     if (history.length === 0) {
-      // First time opening the app
       const firstDoc = {
         id: Date.now(),
         title: "Untitled Document",
@@ -244,19 +228,13 @@ function Workspace() {
 
       setHistory([firstDoc]);
       setCurrentDocId(firstDoc.id);
-
       localStorage.setItem("fluentfix-history", JSON.stringify([firstDoc]));
       localStorage.setItem("fluentfix-current-doc", String(firstDoc.id));
-
       return;
     }
 
-    const savedCurrentDocId = Number(
-      localStorage.getItem("fluentfix-current-doc"),
-    );
-
-    const activeDoc =
-      history.find((doc) => doc.id === savedCurrentDocId) || history[0];
+    const savedCurrentDocId = Number(localStorage.getItem("fluentfix-current-doc"));
+    const activeDoc = history.find((doc) => doc.id === savedCurrentDocId) || history[0];
 
     setCurrentDocId(activeDoc.id);
     setText(activeDoc.original || "");
@@ -310,14 +288,8 @@ function Workspace() {
                       key={item.id}
                       onClick={() => {
                         if (editingDocId !== null) return;
-
                         setCurrentDocId(item.id);
-
-                        localStorage.setItem(
-                          "fluentfix-current-doc",
-                          String(item.id),
-                        );
-
+                        localStorage.setItem("fluentfix-current-doc", String(item.id));
                         setText(item.original || "");
                         setResult(item.result || null);
                       }}
@@ -336,12 +308,10 @@ function Workspace() {
                           onBlur={() => handleRenameDocument(item.id)}
                           onKeyDown={(e) => {
                             e.stopPropagation();
-
                             if (e.key === "Enter") {
                               e.preventDefault();
                               handleRenameDocument(item.id);
                             }
-
                             if (e.key === "Escape") {
                               setEditingDocId(null);
                               setEditingTitle("");
@@ -360,12 +330,8 @@ function Workspace() {
                               setEditingTitle(item.title);
                             }}
                           >
-                            <p className="text-sm text-slate-200 truncate">
-                              {item.title}
-                            </p>
-                            <p className="text-xs text-slate-500 mt-1">
-                              {item.timestamp}
-                            </p>
+                            <p className="text-sm text-slate-200 truncate">{item.title}</p>
+                            <p className="text-xs text-slate-500 mt-1">{item.timestamp}</p>
                           </div>
 
                           <button
@@ -402,9 +368,7 @@ function Workspace() {
             <h2 className="text-lg font-semibold">AI Writing Workspace</h2>
 
             <div className="flex items-center gap-3 mt-1">
-              <p className="text-xs text-slate-400">
-                Improve grammar, spelling, and fluency
-              </p>
+              <p className="text-xs text-slate-400">Improve grammar, spelling, and fluency</p>
 
               <div className="flex items-center gap-1 text-xs">
                 {saveStatus === "Saving..." ? (
@@ -421,6 +385,7 @@ function Workspace() {
               </div>
             </div>
           </div>
+
           <button
             onClick={handleExportPDF}
             disabled={!result}
@@ -434,9 +399,7 @@ function Workspace() {
           <div className="grid lg:grid-cols-2 gap-8">
             <div className="bg-[#0B1220] border border-white/10 rounded-2xl p-6">
               <h3 className="text-xl font-semibold mb-2">Input Text</h3>
-              <p className="text-sm text-slate-400 mb-4">
-                Paste or type your text here.
-              </p>
+              <p className="text-sm text-slate-400 mb-4">Paste or type your text here.</p>
 
               <textarea
                 value={text}
@@ -462,61 +425,42 @@ function Workspace() {
 
             <div className="bg-[#0B1220] border border-white/10 rounded-2xl p-6">
               <h3 className="text-xl font-semibold mb-2">Corrected Output</h3>
-              <p className="text-sm text-slate-400 mb-4">
-                AI suggestions will appear here.
-              </p>
+              <p className="text-sm text-slate-400 mb-4">AI suggestions will appear here.</p>
 
               <div className="h-[420px] border border-white/10 rounded-xl p-4 overflow-auto">
                 {loading ? (
                   <div className="flex items-center justify-center h-full text-slate-400">
                     <div className="text-center">
-                      <Loader2
-                        size={40}
-                        className="animate-spin mx-auto mb-4 text-cyan-400"
-                      />
-                      <p className="text-lg font-medium">
-                        AI is analyzing your text...
-                      </p>
-                      <p className="text-sm mt-2">
-                        Checking spelling, grammar, and fluency
-                      </p>
+                      <Loader2 size={40} className="animate-spin mx-auto mb-4 text-cyan-400" />
+                      <p className="text-lg font-medium">AI is analyzing your text...</p>
+                      <p className="text-sm mt-2">Checking spelling, grammar, and fluency</p>
                     </div>
                   </div>
                 ) : result ? (
                   <div className="space-y-4">
                     <div>
-                      <h4 className="text-cyan-400 font-semibold mb-1">
-                        Original
-                      </h4>
+                      <h4 className="text-cyan-400 font-semibold mb-1">Original</h4>
                       <p>{result.original}</p>
                     </div>
 
                     <div>
-                      <h4 className="text-cyan-400 font-semibold mb-1">
-                        Spelling
-                      </h4>
+                      <h4 className="text-cyan-400 font-semibold mb-1">Spelling</h4>
                       <p>{result.spelling}</p>
                     </div>
 
                     <div>
-                      <h4 className="text-cyan-400 font-semibold mb-1">
-                        Grammar
-                      </h4>
+                      <h4 className="text-cyan-400 font-semibold mb-1">Grammar</h4>
                       <p>{result.grammar}</p>
                     </div>
 
                     <div>
-                      <h4 className="text-cyan-400 font-semibold mb-1">
-                        Fluency
-                      </h4>
+                      <h4 className="text-cyan-400 font-semibold mb-1">Fluency</h4>
                       <p>{result.fluency}</p>
                     </div>
 
                     <div className="pt-3 border-t border-white/10">
                       <div className="flex items-center justify-between mb-2">
-                        <h4 className="text-cyan-400 font-semibold">
-                          Final Corrected Text
-                        </h4>
+                        <h4 className="text-cyan-400 font-semibold">Final Corrected Text</h4>
                         <button
                           onClick={handleCopy}
                           className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition text-sm"
@@ -540,8 +484,7 @@ function Workspace() {
                   </div>
                 ) : (
                   <div className="flex items-center justify-center h-full text-slate-500">
-                    Your corrected text will appear here after clicking “Correct
-                    AI”.
+                    Your corrected text will appear here after clicking “Correct AI”.
                   </div>
                 )}
 
@@ -550,12 +493,9 @@ function Workspace() {
 
               <div className="mt-4 flex items-center gap-3 text-sm">
                 <div className="px-3 py-2 rounded-lg bg-white/5 border border-white/10">
-                  Confidence:{" "}
-                  {result ? `${Math.round(result.confidence * 100)}%` : "—"}
+                  Confidence: {result ? `${Math.round(result.confidence * 100)}%` : "—"}
                 </div>
-                <div className="px-3 py-2 rounded-lg bg-white/5 border border-white/10">
-                  Grammar
-                </div>
+                <div className="px-3 py-2 rounded-lg bg-white/5 border border-white/10">Grammar</div>
               </div>
             </div>
           </div>
@@ -564,19 +504,50 @@ function Workspace() {
             <h3 className="text-lg font-semibold mb-4">Correction Mode</h3>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <button className="border border-white/10 rounded-xl py-4 hover:bg-white/5 transition">
+              <button
+                onClick={() => setMode("spelling")}
+                className={`border rounded-xl py-4 transition ${
+                  mode === "spelling"
+                    ? "border-cyan-400 bg-cyan-500/20 text-cyan-300"
+                    : "border-white/10 hover:bg-white/5"
+                }`}
+              >
                 Spelling
               </button>
-              <button className="border border-white/10 rounded-xl py-4 hover:bg-white/5 transition">
+
+              <button
+                onClick={() => setMode("grammar")}
+                className={`border rounded-xl py-4 transition ${
+                  mode === "grammar"
+                    ? "border-cyan-400 bg-cyan-500/20 text-cyan-300"
+                    : "border-white/10 hover:bg-white/5"
+                }`}
+              >
                 Grammar
               </button>
-              <button className="border border-white/10 rounded-xl py-4 hover:bg-white/5 transition">
+
+              <button
+                onClick={() => setMode("fluency")}
+                className={`border rounded-xl py-4 transition ${
+                  mode === "fluency"
+                    ? "border-cyan-400 bg-cyan-500/20 text-cyan-300"
+                    : "border-white/10 hover:bg-white/5"
+                }`}
+              >
                 Fluency
               </button>
+
               <button
-                onClick={handleCorrection}
+                onClick={() => {
+                  setMode("all");
+                  handleCorrection();
+                }}
                 disabled={loading}
-                className="bg-cyan-500 hover:bg-cyan-400 disabled:opacity-60 disabled:cursor-not-allowed text-black font-semibold rounded-xl py-4 flex items-center justify-center gap-2 transition"
+                className={`rounded-xl py-4 flex items-center justify-center gap-2 transition ${
+                  mode === "all"
+                    ? "bg-cyan-400 text-black"
+                    : "bg-cyan-500 hover:bg-cyan-400 text-black"
+                } disabled:opacity-60 disabled:cursor-not-allowed`}
               >
                 {loading ? (
                   <>

@@ -1,5 +1,9 @@
+from language_tool_python import LanguageTool
+
+tool = LanguageTool("en-US")
+
+
 async def improve_fluency(text: str) -> str:
-    """
-    Placeholder for fluency enhancement.
-    """
-    return text
+    matches = tool.check(text)
+    corrected = tool.correct(text)
+    return corrected
