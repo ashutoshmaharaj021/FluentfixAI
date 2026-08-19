@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     # API
     # ==========================
     API_V1_PREFIX: str
+    FRONTEND_URL: str
 
     # ==========================
     # Security
