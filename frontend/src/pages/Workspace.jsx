@@ -495,7 +495,8 @@ function Workspace() {
                 <div className="px-3 py-2 rounded-lg bg-white/5 border border-white/10">
                   Confidence: {result ? `${Math.round(result.confidence * 100)}%` : "—"}
                 </div>
-                <div className="px-3 py-2 rounded-lg bg-white/5 border border-white/10">{mode === "all" ? "All" : mode}</div>
+                <div className="px-3 py-2 rounded-lg bg-white/5 border border-white/10">{mode === "all" ? 
+                "All" : mode}</div>
               </div>
             </div>
           </div>
