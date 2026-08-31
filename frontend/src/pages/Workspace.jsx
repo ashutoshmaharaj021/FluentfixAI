@@ -1,4 +1,5 @@
 ﻿import { useEffect, useState } from "react";
+import WorkspaceSkeleton from "../components/WorkspaceSkeleton";
 import {
   Sparkles,
   FileText,
@@ -18,6 +19,7 @@ function Workspace() {
   const [mode, setMode] = useState("all");
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [pageReady, setPageReady] = useState(false);
   const [error, setError] = useState("");
   const [saveStatus, setSaveStatus] = useState("Saved");
   const [copied, setCopied] = useState(false);
@@ -228,8 +230,11 @@ function Workspace() {
 
       setHistory([firstDoc]);
       setCurrentDocId(firstDoc.id);
+      setText("");
+      setResult(null);
       localStorage.setItem("fluentfix-history", JSON.stringify([firstDoc]));
       localStorage.setItem("fluentfix-current-doc", String(firstDoc.id));
+      setPageReady(true);
       return;
     }
 
@@ -239,6 +244,7 @@ function Workspace() {
     setCurrentDocId(activeDoc.id);
     setText(activeDoc.original || "");
     setResult(activeDoc.result || null);
+    setPageReady(true);
   }, []);
 
   useEffect(() => {
@@ -247,6 +253,9 @@ function Workspace() {
     }
   }, [currentDocId]);
 
+  if(!pageReady){
+    return <WorkspaceSkeleton />;
+  }
   return (
     <div className="min-h-screen bg-[#060B16] text-white flex">
       <aside className="w-64 border-r border-white/10 bg-[#0B1220] p-6 hidden md:flex flex-col justify-between">
